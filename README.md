@@ -7,7 +7,7 @@ VCClient-CLI は [VCClient (w-okada/voice-changer)](https://github.com/w-okada/v
 CLI であるため、外部から SSH で RVC を実行することができます。
 
 入出力ではローカルファイル・ネットワークを自由にルーティングできます。
-このルーティングには PyAV (FFmpeg) を利用することもでき、これにより SRT や RTMP などネットワークから直接音声を入力して音声変換を実行できます。
+このルーティングにはシステムの FFmpeg を利用することもでき、これにより SRT や RTMP などネットワークから直接音声を入力して音声変換を実行できます。
 
 ## セットアップ手順
 
@@ -48,7 +48,9 @@ python src/main.py \
     --model 0 \
     --tune 6 \
     --gpu 0 \
-    --input-file awesome_input_audio.wav \
+    --input-type ffmpeg \
+    --input-url srt://localhost:1234?mode=caller \
+    --input-sample-rate 44100 \
     --output-type ffmpeg \
     --output-url srt://localhost:1234?mode=caller
 ```
@@ -68,65 +70,11 @@ python src/main.py --enable-downloading-models
 > [!WARNING]
 > このツールに関する問題は、VCClient のリポジトリではなく、こちらのリポジトリで報告してください。
 
-### FFmpeg 入出力に失敗する
-
-#### IndexError: tuple index out of range
-
-SRT プロトコルの Listener モードを利用して入力ストリームを受け取る際この問題が起きることがあります。
-現在修正中です。
-
-#### ModuleNotFoundError: No module named 'av'
-
-FFmpeg 入出力には PyAV (`av`) が必要です。
-以下のコマンドで依存関係をインストールしてください。
-
-```sh
-pip install -e .[ffmpeg]
-```
-
-#### av.error.OSError: [Errno 5] I/O error
-
-PyAV がパケットの送信に失敗した可能性があります。
-接続先が正しいことを確認してください。
+### Caller モードで SRT を使用した際の I/O エラー
 
 SRT プロトコルを利用しており、Caller モードで動作している際、一度接続先から切断された後再接続した場合にもこのエラーが出ることがあります。その場合は Listener を再起動してください。
+
 Listener モードに設定した OBS でこの問題が発生する場合、「非アクティブ時にファイルを閉じる」のチェックを無効化してみてください。
-
-#### av.error.ProtocolNotFoundError: [Errno 1330794744] Protocol not found
-
-SRT プロトコルを利用してこのエラーが出る場合、インストールされた PyAV が libsrt をサポートしていない可能性があります。
-PyAV を 14.x にダウングレードしてください。
-
-```sh
-pip install av<15
-```
-
-> [!INFO]
-> OpenSSL (libcrypto) が同梱されている影響で、一部の環境においてプログラム全体が強制終了する可能性のあるバグが確認されているため、PyAV 16.1.0 以降では意図的に libsrt が無効化された FFmpeg を使用するようになっています。
-> 詳細は [PyAV #1972](https://github.com/PyAV-Org/PyAV/issues/1972) を参照してください。
-
-### PyAV のインストールに失敗する
-
-#### コンパイラが走る (wheel の使用を強制する)
-
-コンパイラが意図せず走る場合、wheel を使用しないと判断されている可能性があります。
-
-`--only-binary` オプションを指定して、強制的に wheel から探すようにしてください。
-
-```sh
-pip install --only-binary :all: av<15
-```
-
-#### その他 (既存の FFmpeg を使用する)
-
-既存の FFmpeg を利用することで、問題が解決する可能性があります。
-
-```sh
-pip install av<15 --no-binary av
-```
-
-> [!WARNING]
-> POSIX 環境が必要になる ([PyAV の README.md](https://github.com/PyAV-Org/PyAV/blob/main/README.md#alternative-installation-methods) を参照) ため、Windows ではこの方法を使用できません。
 
 ### 動作確認済み環境
 

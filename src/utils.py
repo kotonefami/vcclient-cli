@@ -41,9 +41,12 @@ def get_input(input_type: str, **kwargs) -> Input:
         input_url = kwargs.get("input_url")
         if input_url is None:
             raise ValueError("If input type is 'ffmpeg', --input-url must be specified")
+        sample_rate = kwargs.get("sample_rate")
+        if sample_rate is None:
+            raise ValueError("If input type is 'ffmpeg', --input-sample-rate must be specified")
 
         from inputs.FFmpegInput import FFmpegInput
-        return FFmpegInput(input_url)
+        return FFmpegInput(input_url, sample_rate)
     else:
         raise ValueError(f"Unsupported input type: {input_type}")
 

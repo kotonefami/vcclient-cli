@@ -24,6 +24,3 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ffmpeg = [
-    "av<15"
-]

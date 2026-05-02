@@ -22,12 +22,6 @@ wheels = [
 ]
 
 [[package]]
-name = "av"
-version = "14.4.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/86/f6/0b473dab52dfdea05f28f3578b1c56b6c796ce85e76951bab7c4e38d5a74/av-14.4.0.tar.gz", hash = "sha256:3ecbf803a7fdf67229c0edada0830d6bfaea4d10bfb24f0c3f4e607cd1064b42", size = 3892203, upload-time = "2025-05-16T19:13:35.737Z" }
-
-[[package]]
 name = "bitarray"
 version = "3.8.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1167,14 +1161,8 @@ dependencies = [
     { name = "torchfcpe" },
 ]
 
-[package.optional-dependencies]
-ffmpeg = [
-    { name = "av" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "av", marker = "extra == 'ffmpeg'", specifier = "<15" },
     { name = "einops", specifier = "==0.8.2" },
     { name = "fairseq", specifier = "==0.12.2" },
     { name = "faiss-cpu", specifier = "==1.13.2" },
@@ -1191,4 +1179,3 @@ requires-dist = [
     { name = "torchcrepe", specifier = "==0.0.24" },
     { name = "torchfcpe", specifier = "==0.0.3" },
 ]
-provides-extras = ["ffmpeg"]

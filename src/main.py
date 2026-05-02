@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg"], help="Input type ('file' or 'ffmpeg')")
     parser.add_argument("--input-file", type=str, default="data/input.wav", help="Input file path (required when --input-type is 'file')")
     parser.add_argument("--input-url", type=str, default=None, help="Input URL (required when --input-type is 'ffmpeg')")
+    parser.add_argument("--input-sample-rate", type=int, default=None, help="Input audio sample rate (required when --input-type is 'ffmpeg')")
     parser.add_argument("--output-type", type=str, default="file", choices=["file", "ffmpeg"], help="Output type ('file' or 'ffmpeg')")
     parser.add_argument("--output-file", type=str, default="data/output.wav", help="Output file path (required when --output-type is 'file')")
     parser.add_argument("--output-url", type=str, default=None, help="Output URL (required when --output-type is 'ffmpeg')")
@@ -53,7 +54,7 @@ def main():
 
     # 入力と出力を作成
     logger.debug("Creating input and output")
-    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url)
+    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url, sample_rate=args.input_sample_rate)
     output_sink = get_output(args.output_type, output_file=args.output_file, output_url=args.output_url, sample_rate=args.output_sample_rate)
 
     # RVC を初期化

@@ -1,54 +1,63 @@
-import av
+import subprocess
 import numpy as np
 from outputs.Output import Output
+import logging
+
+logger = logging.getLogger("app")
 
 class FFmpegOutput(Output):
     def __init__(self, url: str, sample_rate: int = 44100, codec_name: str = "aac"):
         self.url = url
         self.sample_rate = sample_rate
         self.codec_name = codec_name
-        self._container = None
-        self._stream = None
+        self._proc = None
         self._closed = False
 
     def _ensure_open(self):
-        if self._container is not None:
+        if self._proc is not None:
             return
-        self._container = av.open(self.url, mode="w", format="mpegts", options={"pkt_size": "1316"})
-        self._stream = self._container.add_stream(self.codec_name, rate=self.sample_rate)
-        self._stream.layout = "mono"
-        self._stream.format = "fltp"
+        cmd = [
+            "ffmpeg",
+            "-f", "f32le",
+            "-ac", "1",
+            "-ar", str(self.sample_rate),
+            "-i", "pipe:0",
+            "-c:a", self.codec_name,
+            "-f", "mpegts",
+            "-pkt_size", "1316",
+            self.url
+        ]
+        self._proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        logger.debug("FFmpeg output process started")
 
     def write(self, chunk: np.ndarray) -> None:
         if self._closed:
             return
         self._ensure_open()
-
-        frame = av.AudioFrame.from_ndarray(
-            chunk.reshape(1, -1).astype(np.float32),
-            format="fltp",
-            layout="mono"
-        )
-        frame.sample_rate = self.sample_rate
-        frame.pts = None
-
-        for packet in self._stream.encode(frame):
-            self._container.mux(packet)
+        data = chunk.astype(np.float32).tobytes()
+        try:
+            self._proc.stdin.write(data)
+        except Exception as e:
+            logger.error(f"Error writing to ffmpeg: {e}")
+            raise
 
     def close(self) -> None:
         if self._closed:
             return
         self._closed = True
-
-        try:
-            if self._stream is not None:
-                for packet in self._stream.encode(None):
-                    if self._container is not None:
-                        self._container.mux(packet)
-        finally:
-            if self._container is not None:
+        if self._proc is not None:
+            if self._proc.stdin:
                 try:
-                    self._container.close()
+                    self._proc.stdin.close()
                 except Exception:
                     pass
-                self._container = None
+            try:
+                self._proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+            self._proc = None
