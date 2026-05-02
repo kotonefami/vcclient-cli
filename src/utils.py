@@ -37,8 +37,15 @@ def get_input(input_type: str, **kwargs) -> Input:
 
         from inputs.WavFileInput import WavFileInput
         return WavFileInput(input_file)
+    elif input_type == "ffmpeg":
+        input_url = kwargs.get("input_url")
+        if input_url is None:
+            raise ValueError("If input type is 'ffmpeg', --input-url must be specified")
+
+        from inputs.FFmpegInput import FFmpegInput
+        return FFmpegInput(input_url)
     else:
-        raise ValueError(f"サポートされていない入力タイプ: {input_type}")
+        raise ValueError(f"Unsupported input type: {input_type}")
 
 def get_output(output_type: str, **kwargs) -> Output:
     """出力タイプとファイルパスから出力シンクを作成します。"""
@@ -52,5 +59,15 @@ def get_output(output_type: str, **kwargs) -> Output:
 
         from outputs.WavFileOutput import WavFileOutput
         return WavFileOutput(output_file, sample_rate)
+    elif output_type == "ffmpeg":
+        output_url = kwargs.get("output_url")
+        sample_rate = kwargs.get("sample_rate")
+        if output_url is None:
+            raise ValueError("If output type is 'ffmpeg', --output-url must be specified")
+        if sample_rate is None:
+            raise ValueError("Output sample rate is not specified")
+
+        from outputs.FFmpegOutput import FFmpegOutput
+        return FFmpegOutput(output_url, sample_rate)
     else:
-        raise ValueError(f"サポートされていない出力タイプ: {output_type}")
+        raise ValueError(f"Unsupported output type: {output_type}")

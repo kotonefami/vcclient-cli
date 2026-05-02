@@ -21,10 +21,12 @@ def main():
     parser.add_argument("--pretrain-dir", type=str, default="data/pretrain", help="Directory containing the pretrain models")
     parser.add_argument("--enable-downloading-models", default=False, action="store_true", help="Automatically download initial models if not present")
     parser.add_argument("--model", type=int, required=True, help="Model number to use")
-    parser.add_argument("--input-type", type=str, default="file", choices=["file"], help="Input type (currently only 'file' is supported)")
+    parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg"], help="Input type ('file' or 'ffmpeg')")
     parser.add_argument("--input-file", type=str, default="data/input.wav", help="Input file path (required when --input-type is 'file')")
-    parser.add_argument("--output-type", type=str, default="file", choices=["file"], help="Output type (currently only 'file' is supported)")
+    parser.add_argument("--input-url", type=str, default=None, help="Input URL (required when --input-type is 'ffmpeg')")
+    parser.add_argument("--output-type", type=str, default="file", choices=["file", "ffmpeg"], help="Output type ('file' or 'ffmpeg')")
     parser.add_argument("--output-file", type=str, default="data/output.wav", help="Output file path (required when --output-type is 'file')")
+    parser.add_argument("--output-url", type=str, default=None, help="Output URL (required when --output-type is 'ffmpeg')")
     parser.add_argument("--output-sample-rate", type=int, default=48000, help="Output audio sample rate (default: 48000)")
     parser.add_argument("--f0-detector", type=str, default="rmvpe_onnx", help="F0 detection method to use", choices=["dio", "harvest", "crepe", "crepe_tiny", "crepe_full", "rmvpe", "rmvpe_onnx", "fcpe"])
     parser.add_argument("--tune", type=int, default=0, help="Pitch shift (semitones)")
@@ -51,8 +53,8 @@ def main():
 
     # 入力と出力を作成
     logger.debug("Creating input and output")
-    input_source = get_input(args.input_type, input_file=args.input_file)
-    output_sink = get_output(args.output_type, output_file=args.output_file, sample_rate=args.output_sample_rate)
+    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url)
+    output_sink = get_output(args.output_type, output_file=args.output_file, output_url=args.output_url, sample_rate=args.output_sample_rate)
 
     # RVC を初期化
     logger.debug("Initializing RVC")
