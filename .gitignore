@@ -1,0 +1,15 @@
+# Python 関連
+__pycache__/
+*.egg-info/
+
+# 追加でダウンロードするデータ
+data/
+samples.json
+samples_0003_t.json
+samples_0003_o.json
+samples_0003_t2.json
+samples_0003_o2.json
+samples_0003_d2.json
+samples_0004_t.json
+samples_0004_o.json
+samples_0004_d.json

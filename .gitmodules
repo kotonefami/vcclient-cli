@@ -1,0 +1,3 @@
+[submodule "src/vcclient"]
+	path = src/vcclient
+	url = https://github.com/w-okada/voice-changer
