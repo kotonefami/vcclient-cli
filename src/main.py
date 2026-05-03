@@ -1,7 +1,8 @@
 import sys
+import time
 import logging
 import argparse
-from utils import print_device_info, print_model_info, get_input, get_output
+from utils import print_device_info, print_model_info, get_print_volume, get_input, get_output
 
 # アプリのロガーをセットアップ
 logger = logging.getLogger("app")
@@ -39,6 +40,7 @@ def main():
     parser.add_argument("--protect", type=float, default=0.5, help="Protect setting for RVC")
     parser.add_argument("--rvc-quality", type=int, default=0, help="RVC quality setting")
     parser.add_argument("--silence-front", type=int, default=1, help="Silence front setting (0: off, 1: on)")
+    parser.add_argument("--performance", default=False, action="store_true", help="Enable performance mode")
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -80,8 +82,14 @@ def main():
     # ストリーム処理
     logger.info("Stream started")
     for chunk in input_source.chunks(args.chunk_size):
+        if args.performance:
+            start_time = time.perf_counter()
         out_chunk = rvc.process_chunk(chunk)
         if out_chunk is not None:
+            if args.performance:
+                time_taken = time.perf_counter() - start_time
+                chunk_duration = len(chunk) / input_source.sample_rate()
+                print(f"\r{get_print_volume(chunk)} | Processing time: {time_taken:.4f}s (Chunk duration: {chunk_duration:.4f}s)", end="")
             output_sink.write(out_chunk)
     output_sink.close()
     input_source.close()

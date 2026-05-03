@@ -1,3 +1,4 @@
+import os
 import subprocess
 import numpy as np
 from inputs.Input import Input
@@ -20,6 +21,11 @@ class FFmpegInput(Input):
 
         cmd = [
             "ffmpeg",
+            "-analyzeduration", "0", # 解析を1秒に制限
+            "-probesize", "32", # プローブサイズ制限
+            "-fflags", "nobuffer", # 入力バッファ無効
+            "-flags", "low_delay", # 低遅延モード
+            "-flush_packets", "1", # 即時フラッシュ
             "-i", self.url,
             "-f", "f32le",
             "-ac", "1",
@@ -29,7 +35,8 @@ class FFmpegInput(Input):
         self._proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
+            bufsize=0
         )
         logger.debug("FFmpeg input process started")
 
@@ -45,7 +52,8 @@ class FFmpegInput(Input):
 
         try:
             while True:
-                data = self._proc.stdout.read(bytes_per_chunk - len(self._buffer))
+                data = os.read(self._proc.stdout.fileno(), bytes_per_chunk - len(self._buffer))
+
                 if not data:
                     break
                 self._buffer += data

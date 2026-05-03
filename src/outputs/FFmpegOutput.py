@@ -24,6 +24,8 @@ class FFmpegOutput(Output):
             "-i", "pipe:0",
             "-c:a", self.codec_name,
             "-f", "mpegts",
+            "-muxdelay", "0.001",
+            "-flush_packets", "1",
             "-pkt_size", "1316",
             self.url
         ]
@@ -31,7 +33,8 @@ class FFmpegOutput(Output):
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
+            bufsize=0
         )
         logger.debug("FFmpeg output process started")
 
@@ -42,6 +45,7 @@ class FFmpegOutput(Output):
         data = chunk.astype(np.float32).tobytes()
         try:
             self._proc.stdin.write(data)
+            self._proc.stdin.flush()
         except Exception as e:
             logger.error(f"Error writing to ffmpeg: {e}")
             raise

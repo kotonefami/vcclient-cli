@@ -1,3 +1,4 @@
+import numpy as np
 from logging import getLogger
 from inputs.Input import Input
 from outputs.Output import Output
@@ -27,6 +28,14 @@ def print_model_info(model_dir: str, model_id: int):
             logger.info(f"Model: {model_name} (ID {model_id})")
     else:
         logger.info(f"Model: Unknown (ID {model_id})")
+
+def get_print_volume(audio: np.ndarray):
+    """オーディオの RMS を計算し、音量表示を返します。"""
+    rms = np.sqrt(np.mean(audio ** 2))
+    db = 20 * np.log10(rms + 1e-9)
+    rms_display = int(rms * 100)
+    meter = "█" * int(rms * 10)
+    return f"Input: [{meter:<10}] {rms_display:>3}% ({db:>6.2f} dB)"
 
 def get_input(input_type: str, **kwargs) -> Input:
     """入力タイプとファイルパスから入力ソースを作成します。"""
