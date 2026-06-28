@@ -8,7 +8,7 @@ logger = logging.getLogger("app")
 class FFmpegOutput(Output):
     def __init__(self, url: str, sample_rate: int = 44100, codec_name: str = "aac"):
         self.url = url
-        self.sample_rate = sample_rate
+        self._sample_rate = sample_rate
         self.codec_name = codec_name
         self._proc = None
         self._closed = False
@@ -20,7 +20,7 @@ class FFmpegOutput(Output):
             "ffmpeg",
             "-f", "f32le",
             "-ac", "1",
-            "-ar", str(self.sample_rate),
+            "-ar", str(self._sample_rate),
             "-i", "pipe:0",
             "-c:a", self.codec_name,
             "-f", "mpegts",
@@ -49,6 +49,10 @@ class FFmpegOutput(Output):
         except Exception as e:
             logger.error(f"Error writing to ffmpeg: {e}")
             raise
+
+    def sample_rate(self) -> int:
+        """FFmpeg出力のサンプルレートを返します。"""
+        return self._sample_rate
 
     def close(self) -> None:
         if self._closed:

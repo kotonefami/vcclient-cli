@@ -11,3 +11,8 @@ class Output(ABC):
     def close(self) -> None:
         """出力リソースを解放し、後処理を行います。"""
         pass
+
+    @abstractmethod
+    def sample_rate(self) -> int:
+        """出力音声のサンプルレートを返します。"""
+        pass

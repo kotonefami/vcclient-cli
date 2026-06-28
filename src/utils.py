@@ -56,6 +56,22 @@ def get_input(input_type: str, **kwargs) -> Input:
 
         from inputs.FFmpegInput import FFmpegInput
         return FFmpegInput(input_url, sample_rate)
+    elif input_type == "device":
+        device = kwargs.get("input_device")
+        sample_rate = kwargs.get("input_device_sample_rate")
+
+        from inputs.DeviceInput import DeviceInput
+        return DeviceInput(device, sample_rate)
+    elif input_type == "discord":
+        discord_token = kwargs.get("discord_token")
+        discord_channel = kwargs.get("discord_channel")
+        if discord_token is None:
+            raise ValueError("If input type is 'discord', --discord-token must be specified")
+        if discord_channel is None:
+            raise ValueError("If input type is 'discord', --discord-channel must be specified")
+
+        from inputs.DiscordInput import DiscordInput
+        return DiscordInput(discord_token, discord_channel)
     else:
         raise ValueError(f"Unsupported input type: {input_type}")
 
@@ -81,5 +97,24 @@ def get_output(output_type: str, **kwargs) -> Output:
 
         from outputs.FFmpegOutput import FFmpegOutput
         return FFmpegOutput(output_url, sample_rate)
+    elif output_type == "device":
+        device = kwargs.get("output_device")
+        sample_rate = kwargs.get("output_device_sample_rate")
+
+        from outputs.DeviceOutput import DeviceOutput
+        return DeviceOutput(device, sample_rate)
+    elif output_type == "discord":
+        discord_token = kwargs.get("discord_token")
+        discord_channel = kwargs.get("discord_channel")
+        sample_rate = kwargs.get("sample_rate")
+        if discord_token is None:
+            raise ValueError("If output type is 'discord', --discord-token must be specified")
+        if discord_channel is None:
+            raise ValueError("If output type is 'discord', --discord-channel must be specified")
+        if sample_rate is None:
+            raise ValueError("Output sample rate is not specified")
+
+        from outputs.DiscordOutput import DiscordOutput
+        return DiscordOutput(discord_token, discord_channel, sample_rate)
     else:
         raise ValueError(f"Unsupported output type: {output_type}")

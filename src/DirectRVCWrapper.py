@@ -5,6 +5,9 @@ import logging
 
 import numpy as np
 
+# アプリのロガーを取得
+logger = logging.getLogger("app")
+
 # w-okada/voice-changer を読み込むためのパスを追加
 sys.path.insert(0, str(Path(__file__).parent / "vcclient" / "server"))
 
@@ -142,15 +145,32 @@ class DirectRVCWrapper:
         """
         int16_input = (data * 32767.5).astype(np.int16)
 
+        # デバッグ用：入力データの統計
+        logger.debug(
+            f"RVC input: shape={data.shape}, dtype={data.dtype}, "
+            f"min={data.min():.6f}, max={data.max():.6f}, "
+            f"mean={data.mean():.6f}, std={data.std():.6f}"
+        )
+
         try:
             output_int16, perf = self.vc.on_request(int16_input)
         except Exception as e:
-            print(f"Exception in process_chunk: {e}")
+            logger.error(f"Exception in process_chunk: {e}")
             import traceback
             traceback.print_exc()
             return None
 
-        return output_int16.astype(np.float32) / 32768.0
+        output_float32 = output_int16.astype(np.float32) / 32768.0
+
+        # デバッグ用：出力データの統計
+        logger.debug(
+            f"RVC output: shape={output_float32.shape}, dtype={output_float32.dtype}, "
+            f"min={output_float32.min():.6f}, max={output_float32.max():.6f}, "
+            f"mean={output_float32.mean():.6f}, std={output_float32.std():.6f}, "
+            f"length_ratio={len(output_float32) / len(data):.4f}"
+        )
+
+        return output_float32
 
     def close(self):
         """

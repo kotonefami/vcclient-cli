@@ -24,3 +24,5 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+discord = ["discord.py"]
+device = ["sounddevice"]
