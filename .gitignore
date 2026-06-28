@@ -1,6 +1,7 @@
 # Python 関連
 __pycache__/
 *.egg-info/
+/build/
 
 # 追加でダウンロードするデータ
 data/
