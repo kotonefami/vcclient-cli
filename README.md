@@ -3,7 +3,6 @@
   Supported with 💛 by Kisaragi Project
 </div>
 
-
 ## 概要
 
 VCClient-CLI は [VCClient (w-okada/voice-changer)](https://github.com/w-okada/voice-changer) をバックエンドとして使用する RVC 音声変換 CLI ツールです。
