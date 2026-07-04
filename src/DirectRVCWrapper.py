@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 from pathlib import Path
 import logging
 
@@ -17,6 +18,7 @@ logging.getLogger("fairseq.tasks.text_to_speech").disabled = True
 
 from voice_changer.utils.VoiceChangerParams import VoiceChangerParams
 from const import StaticSlot
+from utils import debug_log
 from data.ModelSlot import RVCModelSlot, loadSlotInfo
 from voice_changer.RVC.RVCr2 import RVCr2
 from voice_changer.VoiceChangerV2 import VoiceChangerV2
@@ -135,25 +137,22 @@ class DirectRVCWrapper:
 
         self.vc = VoiceChangerV2(self.params)
         self.vc.setModel(self.rvc)
+        self.input_sample_rate = input_sample_rate
         self.vc.setInputSampleRate(input_sample_rate)
         self.vc.setOutputSampleRate(output_sample_rate)
 
-    def process_chunk(self, data: np.ndarray) -> np.ndarray | None:
+    def process_chunk(self, input_float32: np.ndarray) -> np.ndarray | None:
         """
         音声チャンクを処理します。
-        data: float32 ndarray, [-1.0, 1.0]
+        input_float32: float32 ndarray, [-1.0, 1.0]
         """
-        int16_input = (data * 32767.5).astype(np.int16)
+        start_time = time.perf_counter()
 
-        # デバッグ用：入力データの統計
-        logger.debug(
-            f"RVC input: shape={data.shape}, dtype={data.dtype}, "
-            f"min={data.min():.6f}, max={data.max():.6f}, "
-            f"mean={data.mean():.6f}, std={data.std():.6f}"
-        )
+        input_int16 = (input_float32 * 32767.5).astype(np.int16)
+        debug_log(input_int16, is_output=False)
 
         try:
-            output_int16, perf = self.vc.on_request(int16_input)
+            output_int16, perf = self.vc.on_request(input_int16)
         except Exception as e:
             logger.error(f"Exception in process_chunk: {e}")
             import traceback
@@ -161,14 +160,14 @@ class DirectRVCWrapper:
             return None
 
         output_float32 = output_int16.astype(np.float32) / 32768.0
+        debug_log(output_float32, is_output=True)
 
-        # デバッグ用：出力データの統計
-        logger.debug(
-            f"RVC output: shape={output_float32.shape}, dtype={output_float32.dtype}, "
-            f"min={output_float32.min():.6f}, max={output_float32.max():.6f}, "
-            f"mean={output_float32.mean():.6f}, std={output_float32.std():.6f}, "
-            f"length_ratio={len(output_float32) / len(data):.4f}"
-        )
+        # 速度異常の検出（処理時間と入力チャンクの持続時間を比較）
+        elapsed = time.perf_counter() - start_time
+        chunk_duration = len(input_float32) / self.input_sample_rate
+        speed_ratio = elapsed / chunk_duration
+        if speed_ratio > 1.0:
+            logger.warning(f"Processing too slow: {speed_ratio:.2f}x real-time")
 
         return output_float32
 

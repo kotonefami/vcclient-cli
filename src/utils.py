@@ -37,6 +37,31 @@ def get_print_volume(audio: np.ndarray):
     meter = "█" * int(rms * 10)
     return f"Input: [{meter:<10}] {rms_display:>3}% ({db:>6.2f} dB)"
 
+def debug_log(data: np.ndarray, is_output: bool = False):
+    """
+    デバッグ用のログ出力を行います。
+    """
+    if data.dtype.kind in "iu":
+        max_value = float(np.iinfo(data.dtype).max + 1)
+    else:
+        max_value = 1.0
+
+    # データの統計情報を計算
+    peak_val = np.max(np.abs(data)) / max_value
+    rms_val = np.sqrt(np.clip(np.mean(data ** 2), a_min=0, a_max=None)) / max_value
+    mean_val = data.mean() / max_value
+
+    logger.debug(
+        f"{'OUT' if is_output else 'IN '}({str(data.dtype):<7}[{str(len(data)):<5}]): "
+        f"Peak={peak_val:.3f}, "
+        f"RMS={rms_val:.3f}, "
+        f"Mean={mean_val: .3f}"
+    )
+
+    # 音割れ（1.0以上でクリッピング）
+    if peak_val >= 1.0:
+        logger.warning(f"{'OUT' if is_output else 'IN '} data is clipping (peak: {peak_val:.3f}).")
+
 def get_input(input_type: str, **kwargs) -> Input:
     """入力タイプとファイルパスから入力ソースを作成します。"""
     if input_type == "file":
