@@ -1,4 +1,10 @@
-# VCClient-CLI
+<div align="center">
+  <h1>VCClient-CLI</h1>
+  Supported with 💛 by Kisaragi Project
+</div>
+
+
+## 概要
 
 VCClient-CLI は [VCClient (w-okada/voice-changer)](https://github.com/w-okada/voice-changer) をバックエンドとして使用する RVC 音声変換 CLI ツールです。
 
@@ -8,6 +14,13 @@ CLI であるため、外部から SSH で RVC を実行することができま
 
 入出力ではローカルファイル・ネットワークを自由にルーティングできます。
 このルーティングにはシステムの FFmpeg を利用することもでき、これにより SRT や RTMP などネットワークから直接音声を入力して音声変換を実行できます。
+
+入出力は以下に対応しています:
+- WAV ファイル
+- オーディオデバイス
+- FFmpeg
+    - SRT, RTMP, HTTP などのネットワークプロトコル
+- Discord Bot
 
 ## セットアップ手順
 
@@ -23,7 +36,7 @@ pip install -e .
 pip install -e . --extra-index-url https://download.pytorch.org/whl/cu121
 ```
 
-## 実行方法
+## 実行手順
 
 ヘルプを表示:
 
@@ -55,6 +68,19 @@ python src/main.py \
     --output-url srt://localhost:1234?mode=caller
 ```
 
+接続されているマイクから音声を取得し、Discord のボイスチャンネルに出力する例:
+
+```sh
+python src/main.py \
+    --model 0 \
+    --gpu 0 \
+    --input-type device \
+    --input-device "Microphone (Realtek High Definition Audio)" \
+    --output-type discord \
+    --discord-token DISCORD_TOKEN_HERE \
+    --discord-channel DISCORD_VOICE_CHANNEL_ID_HERE
+```
+
 ### サンプルモデルのダウンロード
 
 VCClient 付属の初期サンプルモデルをダウンロードしたい場合、`--enable-downloading-models` フラグを使用してください。
@@ -75,6 +101,16 @@ python src/main.py --enable-downloading-models
 SRT プロトコルを利用しており、Caller モードで動作している際、一度接続先から切断された後再接続した場合にもこのエラーが出ることがあります。その場合は Listener を再起動してください。
 
 Listener モードに設定した OBS でこの問題が発生する場合、「非アクティブ時にファイルを閉じる」のチェックを無効化してみてください。
+
+### FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+
+```
+src\vcclient\server\voice_changer\RVC\pipeline\Pipeline.py:120: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast(enabled=self.isHalf):
+```
+
+この警告は VCClient のコード内で発生しているものであり、VCClient-CLI で修正する予定はありません。無視しても問題ありません。
+
 
 ### 動作確認済み環境
 
