@@ -27,7 +27,7 @@ Python 3.10.x が必要です。
 
 ```sh
 # w-okada/voice-changer をサブモジュールとしてクローン
-git submodule update --init --depth 1 --single-branch voice-changer
+git submodule update --init --depth 1 --single-branch src/vcclient
 
 # 依存関係をインストール
 pip install -e .
