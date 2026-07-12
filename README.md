@@ -95,6 +95,33 @@ python src/main.py --enable-downloading-models
 > [!WARNING]
 > このツールに関する問題は、VCClient のリポジトリではなく、こちらのリポジトリで報告してください。
 
+### CUDA 13.x でインストールできない、あるいは CPU 推論にフォールバックする
+
+```
+$ uv pip install -e . --extra-index-url https://download.pytorch.org/whl/cu130
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of torch==2.5.1 and vcclient-cli==0.1.0 depends on torch==2.5.1, we can conclude
+      that vcclient-cli==0.1.0 cannot be used.
+      And because only vcclient-cli==0.1.0 is available and you require vcclient-cli, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `torch` was found on https://download.pytorch.org/whl/cu130, but not at the requested version (torch==2.5.1). A compatible version may be available on a subsequent index (e.g., https://pypi.org/simple). By default, uv will only consider versions that are published on the first index that contains a given package, to avoid dependency confusion attacks. If all indexes are equally trusted, use `--index-strategy unsafe-best-match` to consider all versions from all indexes, regardless of the order in which they were defined.
+```
+
+使用している torch のバージョンが CUDA 13.x に対応していません。uv では、`download.pytorch.org` から取得するよう指定した場合インストールを拒否します。
+pip では CPU 推論を行う torch にフォールバックするようです（未確認）。
+
+CUDA 12.x を使用してください。
+動作確認ができた最後のバージョンは `cu128-full` です。
+
+### ModuleNotFoundError: No module named 'pkg_resources'
+
+setuptools のバージョンをダウングレードしてください。
+
+```sh
+pip install setuptools==81.0.0
+```
+
 ### Caller モードで SRT を使用した際の I/O エラー
 
 SRT プロトコルを利用しており、Caller モードで動作している際、一度接続先から切断された後再接続した場合にもこのエラーが出ることがあります。その場合は Listener を再起動してください。
@@ -114,3 +141,4 @@ src\vcclient\server\voice_changer\RVC\pipeline\Pipeline.py:120: FutureWarning: `
 ### 動作確認済み環境
 
 - Windows 11, Python 3.10.19, GTX1650 (CUDA 12.1)
+- Arch Linux, Python 3.10.20, NVIDIA TITAN X (Pascal) (CUDA 12.4)
