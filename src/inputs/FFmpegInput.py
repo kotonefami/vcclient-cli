@@ -1,5 +1,6 @@
 import os
 import subprocess
+import threading
 import numpy as np
 from inputs.Input import Input
 import logging
@@ -35,6 +36,8 @@ class FFmpegInput(Input):
         self._proc = None
         self._closed = False
         self._buffer = b""
+        self._stderr_thread: threading.Thread | None = None
+        self._stderr_stop = threading.Event()
 
     def _ensure_open(self):
         if self._proc is not None:
@@ -52,10 +55,26 @@ class FFmpegInput(Input):
         self._proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             bufsize=0
         )
+        self._stderr_stop.clear()
+        self._stderr_thread = threading.Thread(target=self._read_stderr, daemon=True)
+        self._stderr_thread.start()
         logger.debug("FFmpeg input process started")
+
+    def _read_stderr(self):
+        """stderr を非同期で読み取り、ログに出力する。"""
+        assert self._proc is not None and self._proc.stderr is not None
+        try:
+            for raw_line in self._proc.stderr:
+                if self._stderr_stop.is_set():
+                    break
+                line = raw_line.decode("utf-8", errors="replace").rstrip()
+                if line:
+                    logger.warning(f"[ffmpeg] {line}")
+        except ValueError:
+            pass
 
     def sample_rate(self) -> int:
         return self._sample_rate
@@ -90,8 +109,14 @@ class FFmpegInput(Input):
     def close(self) -> None:
         self._closed = True
         if self._proc is not None:
+            self._stderr_stop.set()
+            if self._stderr_thread is not None:
+                self._stderr_thread.join(timeout=2)
+                self._stderr_thread = None
             if self._proc.stdout:
                 self._proc.stdout.close()
+            if self._proc.stderr:
+                self._proc.stderr.close()
             self._proc.terminate()
             try:
                 self._proc.wait(timeout=5)
