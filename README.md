@@ -19,6 +19,7 @@ CLI であるため、外部から SSH で RVC を実行することができま
 - オーディオデバイス
 - FFmpeg
     - SRT, RTMP, HTTP などのネットワークプロトコル
+- Ogg/Opus on UDP (FFmpeg ラッパー)
 - Discord Bot
 
 ## セットアップ手順
@@ -78,6 +79,29 @@ python src/main.py \
     --output-type discord \
     --discord-token DISCORD_TOKEN_HERE \
     --discord-channel DISCORD_VOICE_CHANNEL_ID_HERE
+```
+
+UDP で Ogg/Opus 音声を受信し、低遅延で変換する例:
+
+```sh
+python src/main.py \
+    --model 0 \
+    --gpu 0 \
+    --input-type ogg_opus \
+    --input-port 20012 \
+    --input-sample-rate 48000
+```
+
+FFmpeg で任意のプロトコル入力を使い、カスタムオプションを指定する例:
+
+```sh
+python src/main.py \
+    --model 0 \
+    --gpu 0 \
+    --input-type ffmpeg \
+    --input-url udp://0.0.0.0:20012 \
+    --input-sample-rate 48000 \
+    --input-ffmpeg-args "-f ogg -c:a libopus -analyzeduration 0 -probesize 32"
 ```
 
 ### サンプルモデルのダウンロード

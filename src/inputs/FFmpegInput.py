@@ -7,10 +7,31 @@ import logging
 logger = logging.getLogger("app")
 
 class FFmpegInput(Input):
-    def __init__(self, url: str, sample_rate: int, chunk_size: int = 1024):
+    """FFmpeg を使った汎用入力クラス。
+
+    input_args で入力側のオプションを外部から注入できる。
+    指定しない場合は低遅延向けのデフォルト値が使用される。
+    """
+
+    DEFAULT_INPUT_ARGS: list[str] = [
+        "-analyzeduration", "0",
+        "-probesize", "32",
+        "-fflags", "nobuffer",
+        "-flags", "low_delay",
+        "-flush_packets", "1",
+    ]
+
+    def __init__(
+        self,
+        url: str,
+        sample_rate: int,
+        chunk_size: int = 1024,
+        input_args: list[str] | None = None,
+    ):
         self.url = url
         self._sample_rate = sample_rate
         self.chunk_size = chunk_size
+        self._input_args = input_args if input_args is not None else self.DEFAULT_INPUT_ARGS
         self._proc = None
         self._closed = False
         self._buffer = b""
@@ -21,11 +42,7 @@ class FFmpegInput(Input):
 
         cmd = [
             "ffmpeg",
-            "-analyzeduration", "0", # 解析を1秒に制限
-            "-probesize", "32", # プローブサイズ制限
-            "-fflags", "nobuffer", # 入力バッファ無効
-            "-flags", "low_delay", # 低遅延モード
-            "-flush_packets", "1", # 即時フラッシュ
+            *self._input_args,
             "-i", self.url,
             "-f", "f32le",
             "-ac", "1",

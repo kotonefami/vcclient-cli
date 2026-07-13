@@ -27,10 +27,12 @@ def main():
     parser.add_argument("--model", type=int, required=True, help="Model number to use")
     parser.add_argument("--discord-token", type=str, default=None, help="Discord bot token")
     parser.add_argument("--discord-channel", type=int, default=None, help="Discord voice channel ID")
-    parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg", "discord", "device"], help="Input type ('file', 'ffmpeg', 'discord', or 'device')")
+    parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg", "ogg_opus", "discord", "device"], help="Input type ('file', 'ffmpeg', 'ogg_opus', 'discord', or 'device')")
     parser.add_argument("--input-file", type=str, default="data/input.wav", help="Input file path (required when --input-type is 'file')")
     parser.add_argument("--input-url", type=str, default=None, help="Input URL (required when --input-type is 'ffmpeg')")
     parser.add_argument("--input-sample-rate", type=int, default=None, help="Input audio sample rate (required when --input-type is 'ffmpeg')")
+    parser.add_argument("--input-port", type=int, default=20012, help="UDP port for OggOpus input (default: 20012)")
+    parser.add_argument("--input-ffmpeg-args", type=str, default=None, help="Custom FFmpeg input options (space-separated, used with 'ffmpeg' type)")
     parser.add_argument("--input-device", type=str, default=None, help="Input audio device name or index (required when --input-type is 'device')")
     parser.add_argument("--output-device", type=str, default=None, help="Output audio device name or index (required when --output-type is 'device')")
     parser.add_argument("--device-sample-rate", type=int, default=None, help="[Deprecated] Sample rate for device I/O. Use --input-device-sample-rate and --output-device-sample-rate instead.")
@@ -89,7 +91,7 @@ def main():
 
     # 入力と出力を作成
     logger.debug("Creating input and output")
-    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url, sample_rate=args.input_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, input_device=args.input_device, input_device_sample_rate=args.input_device_sample_rate)
+    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url, sample_rate=args.input_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, input_device=args.input_device, input_device_sample_rate=args.input_device_sample_rate, input_port=args.input_port, input_ffmpeg_args=args.input_ffmpeg_args)
     output_sink = get_output(args.output_type, output_file=args.output_file, output_url=args.output_url, sample_rate=args.output_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, output_device=args.output_device, output_device_sample_rate=args.output_device_sample_rate)
 
     # 入出力のサンプルレートを取得（バイパス時のリサンプリングに使用）

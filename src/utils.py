@@ -62,6 +62,13 @@ def debug_log(data: np.ndarray, is_output: bool = False):
     if peak_val >= 1.0:
         logger.warning(f"{'OUT' if is_output else 'IN '} data is clipping (peak: {peak_val:.3f}).")
 
+def _parse_ffmpeg_args(raw: str | None) -> list[str] | None:
+    """スペース区切りの FFmpeg オプション文字列をリストに変換します。"""
+    if raw is None:
+        return None
+    return raw.split()
+
+
 def get_input(input_type: str, **kwargs) -> Input:
     """入力タイプとファイルパスから入力ソースを作成します。"""
     if input_type == "file":
@@ -79,8 +86,18 @@ def get_input(input_type: str, **kwargs) -> Input:
         if sample_rate is None:
             raise ValueError("If input type is 'ffmpeg', --input-sample-rate must be specified")
 
+        input_args = _parse_ffmpeg_args(kwargs.get("input_ffmpeg_args"))
+
         from inputs.FFmpegInput import FFmpegInput
-        return FFmpegInput(input_url, sample_rate)
+        return FFmpegInput(input_url, sample_rate, input_args=input_args)
+    elif input_type == "ogg_opus":
+        sample_rate = kwargs.get("sample_rate")
+        if sample_rate is None:
+            raise ValueError("If input type is 'ogg_opus', --input-sample-rate must be specified")
+        port = kwargs.get("input_port", 20012)
+
+        from inputs.OggOpusInput import OggOpusInput
+        return OggOpusInput(port=port, sample_rate=sample_rate)
     elif input_type == "device":
         device = kwargs.get("input_device")
         sample_rate = kwargs.get("input_device_sample_rate")
