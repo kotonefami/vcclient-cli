@@ -103,6 +103,8 @@ def get_input(input_type: str, **kwargs) -> Input:
         sample_rate = kwargs.get("input_device_sample_rate")
 
         from inputs.DeviceInput import DeviceInput
+        if isinstance(device, str) and device.strip().isdigit():
+            device = int(device)
         return DeviceInput(device, sample_rate)
     elif input_type == "discord":
         discord_token = kwargs.get("discord_token")
@@ -144,6 +146,8 @@ def get_output(output_type: str, **kwargs) -> Output:
         sample_rate = kwargs.get("output_device_sample_rate")
 
         from outputs.DeviceOutput import DeviceOutput
+        if isinstance(device, str) and device.strip().isdigit():
+            device = int(device)
         return DeviceOutput(device, sample_rate)
     elif output_type == "discord":
         discord_token = kwargs.get("discord_token")
