@@ -98,6 +98,15 @@ def get_input(input_type: str, **kwargs) -> Input:
 
         from inputs.OggOpusInput import OggOpusInput
         return OggOpusInput(port=port, sample_rate=sample_rate)
+    elif input_type == "rtp_opus":
+        sample_rate = kwargs.get("sample_rate")
+        if sample_rate is None:
+            raise ValueError("If input type is 'rtp_opus', --input-sample-rate must be specified")
+        port = kwargs.get("input_port", 20012)
+        payload_type = kwargs.get("payload_type", 120)
+
+        from inputs.RtpOpusInput import RtpOpusInput
+        return RtpOpusInput(port=port, sample_rate=sample_rate, payload_type=payload_type)
     elif input_type == "device":
         device = kwargs.get("input_device")
         sample_rate = kwargs.get("input_device_sample_rate")
