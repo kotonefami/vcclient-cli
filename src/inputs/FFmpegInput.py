@@ -1,17 +1,20 @@
-import os
-import subprocess
-import threading
-import numpy as np
-from inputs.Input import Input
+"""FFmpeg を使った汎用入力クラスです。
+
+ProcessInput を継承し、FFmpeg に特化したコマンド構築と
+デフォルトオプションを提供します。
+"""
+
 import logging
+from inputs.ProcessInput import ProcessInput
 
 logger = logging.getLogger("app")
 
-class FFmpegInput(Input):
-    """FFmpeg を使った汎用入力クラス。
 
-    input_args で入力側のオプションを外部から注入できる。
-    指定しない場合は低遅延向けのデフォルト値が使用される。
+class FFmpegInput(ProcessInput):
+    """FFmpeg を使って音声入力を受け取るクラス。
+
+    input_args で入力側のオプションを外部から注入できます。
+    指定しない場合は低遅延向けのデフォルト値が使用されます。
     """
 
     DEFAULT_INPUT_ARGS: list[str] = [
@@ -29,19 +32,15 @@ class FFmpegInput(Input):
         chunk_size: int = 1024,
         input_args: list[str] | None = None,
     ):
-        self.url = url
-        self._sample_rate = sample_rate
-        self.chunk_size = chunk_size
-        self._input_args = input_args if input_args is not None else self.DEFAULT_INPUT_ARGS
-        self._proc = None
-        self._closed = False
-        self._buffer = b""
-        self._stderr_thread: threading.Thread | None = None
-        self._stderr_stop = threading.Event()
+        """FFmpeg 入力を作成します。
 
-    def _ensure_open(self):
-        if self._proc is not None:
-            return
+        :param url: FFmpeg の -i に渡す入力 URL
+        :param sample_rate: 出力サンプルレート
+        :param chunk_size: チャンクサイズ
+        :param input_args: FFmpeg の入力オプション（-i の前に追加）
+        """
+        self.url = url
+        self._input_args = input_args if input_args is not None else self.DEFAULT_INPUT_ARGS
 
         cmd = [
             "ffmpeg",
@@ -49,78 +48,7 @@ class FFmpegInput(Input):
             "-i", self.url,
             "-f", "f32le",
             "-ac", "1",
-            "-ar", str(self._sample_rate),
-            "pipe:1"
+            "-ar", str(sample_rate),
+            "pipe:1",
         ]
-        self._proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=0
-        )
-        self._stderr_stop.clear()
-        self._stderr_thread = threading.Thread(target=self._read_stderr, daemon=True)
-        self._stderr_thread.start()
-        logger.debug("FFmpeg input process started")
-
-    def _read_stderr(self):
-        """stderr を非同期で読み取り、ログに出力する。"""
-        assert self._proc is not None and self._proc.stderr is not None
-        try:
-            for raw_line in self._proc.stderr:
-                if self._stderr_stop.is_set():
-                    break
-                line = raw_line.decode("utf-8", errors="replace").rstrip()
-                if line:
-                    logger.warning(f"[ffmpeg] {line}")
-        except ValueError:
-            pass
-
-    def sample_rate(self) -> int:
-        return self._sample_rate
-
-    def chunks(self, chunk_size: int):
-        if self._closed:
-            return
-        self._ensure_open()
-        chunk_size = chunk_size or self.chunk_size
-        bytes_per_chunk = chunk_size * 4
-
-        try:
-            while True:
-                data = os.read(self._proc.stdout.fileno(), bytes_per_chunk - len(self._buffer))
-
-                if not data:
-                    break
-                self._buffer += data
-                while len(self._buffer) >= bytes_per_chunk:
-                    chunk_data = self._buffer[:bytes_per_chunk]
-                    self._buffer = self._buffer[bytes_per_chunk:]
-                    yield np.frombuffer(chunk_data, dtype=np.float32)
-        except Exception as e:
-            logger.error(f"Error reading from ffmpeg: {e}")
-            raise
-        finally:
-            if self._buffer:
-                if len(self._buffer) < bytes_per_chunk:
-                    self._buffer += b"\x00" * (bytes_per_chunk - len(self._buffer))
-                yield np.frombuffer(self._buffer[:bytes_per_chunk], dtype=np.float32)
-
-    def close(self) -> None:
-        self._closed = True
-        if self._proc is not None:
-            self._stderr_stop.set()
-            if self._stderr_thread is not None:
-                self._stderr_thread.join(timeout=2)
-                self._stderr_thread = None
-            if self._proc.stdout:
-                self._proc.stdout.close()
-            if self._proc.stderr:
-                self._proc.stderr.close()
-            self._proc.terminate()
-            try:
-                self._proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self._proc.kill()
-            self._proc = None
-        self._buffer = b""
+        super().__init__(cmd, sample_rate, chunk_size)

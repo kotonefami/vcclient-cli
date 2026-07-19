@@ -20,6 +20,7 @@ CLI であるため、外部から SSH で RVC を実行することができま
 - FFmpeg
     - SRT, RTMP, HTTP などのネットワークプロトコル
 - Discord Bot
+- 別アプリケーションの標準入出力
 
 入力のみ、以下に対応しています:
 - [Ogg/Opus on UDP](./src/inputs/OggOpusInput.py) (FFmpeg のラッパー)
