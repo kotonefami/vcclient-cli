@@ -19,8 +19,13 @@ CLI であるため、外部から SSH で RVC を実行することができま
 - オーディオデバイス
 - FFmpeg
     - SRT, RTMP, HTTP などのネットワークプロトコル
-- Ogg/Opus on UDP (FFmpeg ラッパー)
 - Discord Bot
+
+入力のみ、以下に対応しています:
+- [Ogg/Opus on UDP](./src/inputs/OggOpusInput.py) (FFmpeg のラッパー)
+
+> [!IMPORTANT]
+> Ogg/Opus on UDP は、VCClient-CLI が動作してから送信を開始してください。
 
 ## セットアップ手順
 
