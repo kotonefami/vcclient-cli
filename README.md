@@ -24,10 +24,9 @@ CLI であるため、外部から SSH で RVC を実行することができま
 
 入力のみ、以下に対応しています:
 - [Ogg/Opus on UDP](./src/inputs/OggOpusInput.py) (FFmpeg のラッパー)
-- [RTP/Opus on UDP](./src/inputs/RtpOpusInput.py) (低遅延 RTP/Opus 通信)
 
 > [!IMPORTANT]
-> Ogg/Opus on UDP および RTP/Opus on UDP は、VCClient-CLI が動作してから送信を開始してください。
+> Ogg/Opus on UDP は、VCClient-CLI が動作してから送信を開始してください。
 
 ## セットアップ手順
 
@@ -88,7 +87,7 @@ python src/main.py \
     --discord-channel DISCORD_VOICE_CHANNEL_ID_HERE
 ```
 
-UDP で Ogg/Opus 音声を受信し、オーディオデバイスに出力する例:
+UDP で Ogg/Opus 音声を受信し、低遅延で変換する例:
 
 ```sh
 python src/main.py \
@@ -96,29 +95,8 @@ python src/main.py \
     --gpu 0 \
     --input-type ogg_opus \
     --input-port 20012 \
-    --input-sample-rate 48000 \
-    --output-type device \
-    --output-device "スピーカー (Realtek High Definition Audio)" \
-    --output-sample-rate 48000
+    --input-sample-rate 48000
 ```
-
-UDP で RTP/Opus 音声を受信し、低遅延で変換する例（payload_type をデフォルトの 120 から 97 に変更する場合）:
-
-```sh
-python src/main.py \
-    --model 0 \
-    --gpu 0 \
-    --input-type rtp_opus \
-    --input-sample-rate 48000 \
-    --input-payload-type 97
-```
-
-> [!TIP]
-> RTP/Opus 送信側の参考実装（FFmpeg）:
-> ```sh
-> ffmpeg -f dshow -i audio="Microphone" -c:a libopus -frame_duration 20 -application lowdelay -f rtp -payload_type 120 rtp://127.0.0.1:20012
-> ```
-> `--input-payload-type` に合わせて `-payload_type` オプションでペイロードタイプを指定できます（受信側のデフォルトは 120 です）。
 
 FFmpeg で任意のプロトコル入力を使い、カスタムオプションを指定する例:
 
