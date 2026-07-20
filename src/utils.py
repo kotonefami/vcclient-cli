@@ -116,6 +116,16 @@ def get_input(input_type: str, **kwargs) -> Input:
 
         from inputs.DiscordInput import DiscordInput
         return DiscordInput(discord_token, discord_channel)
+    elif input_type == "process":
+        cmd = kwargs.get("input_cmd")
+        sample_rate = kwargs.get("sample_rate")
+        if cmd is None:
+            raise ValueError("If input type is 'process', --input-cmd must be specified")
+        if sample_rate is None:
+            raise ValueError("If input type is 'process', --input-sample-rate must be specified")
+
+        from inputs.ProcessInput import ProcessInput
+        return ProcessInput(cmd, sample_rate)
     else:
         raise ValueError(f"Unsupported input type: {input_type}")
 
@@ -162,5 +172,15 @@ def get_output(output_type: str, **kwargs) -> Output:
 
         from outputs.DiscordOutput import DiscordOutput
         return DiscordOutput(discord_token, discord_channel, sample_rate)
+    elif output_type == "process":
+        cmd = kwargs.get("output_cmd")
+        sample_rate = kwargs.get("sample_rate")
+        if cmd is None:
+            raise ValueError("If output type is 'process', --output-cmd must be specified")
+        if sample_rate is None:
+            raise ValueError("Output sample rate is not specified")
+
+        from outputs.ProcessOutput import ProcessOutput
+        return ProcessOutput(cmd, sample_rate)
     else:
         raise ValueError(f"Unsupported output type: {output_type}")

@@ -1,6 +1,7 @@
 import sys
 import time
 import logging
+import shlex
 import argparse
 import numpy as np
 import resampy
@@ -27,20 +28,22 @@ def main():
     parser.add_argument("--model", type=int, required=True, help="Model number to use")
     parser.add_argument("--discord-token", type=str, default=None, help="Discord bot token")
     parser.add_argument("--discord-channel", type=int, default=None, help="Discord voice channel ID")
-    parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg", "ogg_opus", "discord", "device"], help="Input type ('file', 'ffmpeg', 'ogg_opus', 'discord', or 'device')")
+    parser.add_argument("--input-type", type=str, default="file", choices=["file", "ffmpeg", "ogg_opus", "discord", "device", "process"], help="Input type ('file', 'ffmpeg', 'ogg_opus', 'discord', 'device', or 'process')")
     parser.add_argument("--input-file", type=str, default="data/input.wav", help="Input file path (required when --input-type is 'file')")
     parser.add_argument("--input-url", type=str, default=None, help="Input URL (required when --input-type is 'ffmpeg')")
     parser.add_argument("--input-sample-rate", type=int, default=None, help="Input audio sample rate (required when --input-type is 'ffmpeg')")
     parser.add_argument("--input-port", type=int, default=20012, help="UDP port for OggOpus input (default: 20012)")
     parser.add_argument("--input-ffmpeg-args", type=str, default=None, help="Custom FFmpeg input options (space-separated, used with 'ffmpeg' type)")
+    parser.add_argument("--input-cmd", type=str, default=None, help="Command for 'process' input type (use double quotes for arguments, e.g. 'my_program --arg1 val1')")
     parser.add_argument("--input-device", type=str, default=None, help="Input audio device name or index (required when --input-type is 'device')")
     parser.add_argument("--output-device", type=str, default=None, help="Output audio device name or index (required when --output-type is 'device')")
     parser.add_argument("--device-sample-rate", type=int, default=None, help="[Deprecated] Sample rate for device I/O. Use --input-device-sample-rate and --output-device-sample-rate instead.")
     parser.add_argument("--input-device-sample-rate", type=int, default=None, help="Sample rate for input device (auto-detected from device if not specified)")
     parser.add_argument("--output-device-sample-rate", type=int, default=None, help="Sample rate for output device (auto-detected from device if not specified)")
-    parser.add_argument("--output-type", type=str, default="file", choices=["file", "ffmpeg", "discord", "device"], help="Output type ('file', 'ffmpeg', 'discord', or 'device')")
+    parser.add_argument("--output-type", type=str, default="file", choices=["file", "ffmpeg", "discord", "device", "process"], help="Output type ('file', 'ffmpeg', 'discord', 'device', or 'process')")
     parser.add_argument("--output-file", type=str, default="data/output.wav", help="Output file path (required when --output-type is 'file')")
     parser.add_argument("--output-url", type=str, default=None, help="Output URL (required when --output-type is 'ffmpeg')")
+    parser.add_argument("--output-cmd", type=str, default=None, help="Command for 'process' output type (use double quotes for arguments, e.g. 'my_program --arg1 val1')")
     parser.add_argument("--output-sample-rate", type=int, default=48000, help="Output audio sample rate (default: 48000)")
     parser.add_argument("--f0-detector", type=str, default="rmvpe_onnx", help="F0 detection method to use", choices=["dio", "harvest", "crepe", "crepe_tiny", "crepe_full", "rmvpe", "rmvpe_onnx", "fcpe"])
     parser.add_argument("--tune", type=int, default=0, help="Pitch shift (semitones)")
@@ -70,6 +73,14 @@ def main():
     if args.input_type == "discord" and args.output_type == "discord":
         parser.error("--input-type and --output-type cannot both be 'discord'")
 
+    # process タイプのバリデーション
+    if args.input_type == "process":
+        if args.input_cmd is None:
+            parser.error("--input-cmd is required when --input-type is 'process'")
+    if args.output_type == "process":
+        if args.output_cmd is None:
+            parser.error("--output-cmd is required when --output-type is 'process'")
+
     # --device-sample-rate（非推奨）から新しい引数へのフォールバック
     if args.device_sample_rate is not None:
         logger.warning(
@@ -91,8 +102,8 @@ def main():
 
     # 入力と出力を作成
     logger.debug("Creating input and output")
-    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url, sample_rate=args.input_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, input_device=args.input_device, input_device_sample_rate=args.input_device_sample_rate, input_port=args.input_port, input_ffmpeg_args=args.input_ffmpeg_args)
-    output_sink = get_output(args.output_type, output_file=args.output_file, output_url=args.output_url, sample_rate=args.output_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, output_device=args.output_device, output_device_sample_rate=args.output_device_sample_rate)
+    input_source = get_input(args.input_type, input_file=args.input_file, input_url=args.input_url, sample_rate=args.input_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, input_device=args.input_device, input_device_sample_rate=args.input_device_sample_rate, input_port=args.input_port, input_ffmpeg_args=args.input_ffmpeg_args, input_cmd=shlex.split(args.input_cmd) if args.input_cmd is not None else None)
+    output_sink = get_output(args.output_type, output_file=args.output_file, output_url=args.output_url, sample_rate=args.output_sample_rate, discord_token=args.discord_token, discord_channel=args.discord_channel, output_device=args.output_device, output_device_sample_rate=args.output_device_sample_rate, output_cmd=shlex.split(args.output_cmd) if args.output_cmd is not None else None)
 
     # 入出力のサンプルレートを取得（バイパス時のリサンプリングに使用）
     _input_sr = input_source.sample_rate()

@@ -110,6 +110,24 @@ python src/main.py \
     --input-ffmpeg-args "-f ogg -c:a libopus -analyzeduration 0 -probesize 32"
 ```
 
+外部プロセスの標準出力から音声を入力し、標準入力に出力する例（`--input-cmd` / `--output-cmd` でコマンドと引数を指定）:
+
+```sh
+python src/main.py \
+    --model 0 \
+    --gpu 0 \
+    --input-type process \
+    --input-cmd "my_audio_receiver --port 12345 --format f32le" \
+    --input-sample-rate 48000 \
+    --output-type process \
+    --output-cmd "my_audio_sender --host 192.168.1.100 --port 20000" \
+    --output-sample-rate 48000
+```
+
+> [!NOTE]
+> `--input-cmd` / `--output-cmd` は1つの文字列として指定してください。
+> 例: `--input-cmd "program --arg1 value1 --arg2 'quoted value'"`
+
 ### サンプルモデルのダウンロード
 
 VCClient 付属の初期サンプルモデルをダウンロードしたい場合、`--enable-downloading-models` フラグを使用してください。
